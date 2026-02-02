@@ -1,73 +1,209 @@
-# React + TypeScript + Vite
+# GeoAuth
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack web app with authentication and IP-based geolocation, built using a React frontend and a Node.js backend.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
 
-## React Compiler
+### Frontend
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* React (Vite)
+* Deployed on Vercel
+* Handles UI, routing, authentication state, and map rendering
 
-## Expanding the ESLint configuration
+### Backend
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+* Node.js + Express
+* REST API for authentication, geolocation, and search history
+* Connects to PostgreSQL via Supabase
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Database
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* PostgreSQL (Supabase)
+* Stores users and IP search history
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### External API
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+* ipinfo.io Geo API
+* Provides IP address geolocation data
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## High-Level Architecture
+
+React (Vercel)
+→ HTTPS (JWT Auth)
+→ Express API
+→ PostgreSQL (Supabase)
+→ ipinfo.io Geo API
+
+---
+
+## Application Flow
+
+### 1. Application Initialization
+
+* On app load, the frontend checks for a stored JWT token.
+* If no token exists, the user is redirected to the Login page.
+* If a token exists, the user is redirected to the Home page.
+* Optionally, the token can be validated using a protected endpoint.
+
+---
+
+### 2. Authentication Flow
+
+1. User enters email and password on the Login page.
+2. Frontend sends a request to the backend:
+
+   * POST /api/login
+3. Backend:
+
+   * Looks up the user in the database
+   * Verifies the password using bcrypt
+   * Issues a signed JWT token
+4. Frontend stores the token and redirects the user to the Home page.
+
+---
+
+### 3. Home Screen – Logged-In User IP
+
+1. Frontend requests geolocation data for the logged-in user:
+
+   * GET /api/geo/self
+2. Backend:
+
+   * Extracts the client IP from request headers
+   * Calls ipinfo.io with the extracted IP
+3. Frontend displays:
+
+   * IP address
+   * City, region, country
+   * Organization and timezone
+   * Map with a pinned location
+
+---
+
+### 4. IP Address Search
+
+1. User enters an IP address.
+2. Frontend validates the IP format.
+3. Frontend sends a request:
+
+   * GET /api/geo/:ip
+4. Backend:
+
+   * Validates the IP address
+   * Fetches geolocation data from ipinfo.io
+   * Stores the result in the database as search history
+5. Frontend updates the displayed geolocation data and map.
+
+---
+
+### 5. Clear Search
+
+* Clears the active search.
+* Reverts the display back to the logged-in user’s IP geolocation.
+
+---
+
+### 6. Search History
+
+#### Fetch History
+
+* GET /api/history
+* Returns all IP searches associated with the logged-in user.
+
+#### Re-display History (Optional)
+
+* Clicking a history item reloads and displays its geolocation data.
+
+#### Bulk Delete (Optional)
+
+* DELETE /api/history
+* Deletes multiple selected history records.
+
+---
+
+## API Endpoints
+
+### Authentication
+
+* POST /api/login
+  Authenticates a user and returns a JWT token.
+
+### Geolocation
+
+* GET /api/geo/self
+  Returns geolocation data for the logged-in user.
+* GET /api/geo/:ip
+  Returns geolocation data for a specific IP address.
+
+### History
+
+* GET /api/history
+  Returns the user’s IP search history.
+* DELETE /api/history
+  Deletes selected search history records.
+
+---
+
+## Data Models
+
+### User
+
+* id
+* email (unique)
+* passwordHash
+* createdAt
+
+### SearchHistory
+
+* id
+* userId (foreign key)
+* ip
+* geo (JSON)
+* createdAt
+
+---
+
+## Security
+
+* JWT-based authentication
+* Protected API routes
+* Passwords hashed with bcrypt
+* CORS restricted to frontend origin
+* Secrets managed via environment variables
+
+---
+
+## Deployment
+
+### Frontend
+
+* Built using Vite
+* Deployed on Vercel
+
+### Backend
+
+* Express API deployed on a Node-compatible hosting provider
+
+### Database
+
+* PostgreSQL hosted on Supabase
+
+===
+
+## Environment Variables
+
+### Frontend
+
+* VITE_API_BASE_URL
+
+### Backend
+
+* DATABASE_URL
+* JWT_SECRET
+* CORS_ORIGIN
+* IPINFO_TOKEN
+
