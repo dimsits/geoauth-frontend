@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { clearToken } from "../auth.storage";
 import { useAuth } from "../../../app/providers/AuthProvider";
-import { AUTH_ME_QUERY_KEY } from "./useMe";
+import { authKeys } from "../auth.keys";
 
 /**
  * Logout hook.
@@ -23,7 +23,7 @@ export function useLogout() {
     setUser(null);
 
     // 3) Clear auth-related cache
-    queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
+    queryClient.removeQueries({ queryKey: authKeys.me() });
 
     // Optional: clear all cached data to avoid cross-user leakage
     queryClient.clear();

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { AppError } from "../../../lib/errors";
 import { me } from "../../../api/auth.api";
 import { getToken } from "../auth.storage";
+import { authKeys } from "../auth.keys";
 
 /**
  * Canonical query key for the current authenticated user.
@@ -24,7 +25,7 @@ export function useMe() {
     Awaited<ReturnType<typeof me>>["user"],
     AppError
   >({
-    queryKey: AUTH_ME_QUERY_KEY,
+    queryKey: authKeys.me(),
     queryFn: async () => {
       const res = await me();
       return res.user;

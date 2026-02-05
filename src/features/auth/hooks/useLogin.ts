@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AppError } from "../../../lib/errors";
 import { login, type LoginRequest, type LoginResponse, me } from "../../../api/auth.api";
 import { setToken } from "../auth.storage";
+import { authKeys } from "../auth.keys";
 
 // Query key for the current session/user
 export const AUTH_ME_QUERY_KEY = ["auth", "me"] as const;
@@ -28,7 +29,7 @@ export function useLogin() {
        * - populate cache with /api/me (best for immediate app auth state)
        * - if it fails, it will surface through normal error flows later
        */
-      await queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: authKeys.me() });
 
       // Optional: eagerly fetch /me so UI can react immediately.
       // If you prefer to avoid eager fetch, remove this block.
