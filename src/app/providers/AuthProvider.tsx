@@ -7,8 +7,11 @@ import {
   type PropsWithChildren,
 } from "react";
 
-import { getToken, clearToken } from "./auth.storage";
 import type { AppError } from "../../lib/errors";
+import { isUnauthorized } from "../../lib/errors";
+
+import { clearToken, getToken } from "../../features/auth/auth.storage";
+import { useMe } from "../../features/auth/hooks/useMe";
 
 /**
  * Minimal user shape.
@@ -37,47 +40,57 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
 
   /**
-   * Bootstrap auth state.
-   * For now: token presence only.
-   * Next step: replace with `useMe` query.
+   * Session bootstrap via React Query.
+   * Enabled only when a token exists.
+   */
+  const meQuery = useMe();
+
+  /**
+   * Sync provider state with /me query results.
    */
   useEffect(() => {
-    const token = getToken();
-
-    if (!token) {
-      setUser(null);
-      setIsLoading(false);
+    if (meQuery.data) {
+      setUser(meQuery.data);
+      setError(null);
       return;
     }
 
-    /**
-     * We intentionally do NOT fetch `/me` here yet.
-     * That will be delegated to `useMe` (React Query).
-     */
-    setIsLoading(false);
-  }, []);
+    if (meQuery.error) {
+      setError(meQuery.error);
 
+      // Invalid / expired token → clear session
+      if (isUnauthorized(meQuery.error)) {
+        clearToken();
+        setUser(null);
+      }
+    }
+  }, [meQuery.data, meQuery.error]);
+
+  /**
+   * Logout action exposed to consumers.
+   */
   const logout = () => {
     clearToken();
     setUser(null);
     setError(null);
   };
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
+  const value = useMemo<AuthContextValue>(() => {
+    const hasToken = Boolean(getToken());
+
+    return {
       user,
-      isAuthenticated: Boolean(user),
-      isLoading,
+      isAuthenticated: Boolean(hasToken && user),
+      isLoading: hasToken && meQuery.isLoading,
       error,
+
       setUser,
       logout,
-    }),
-    [user, isLoading, error],
-  );
+    };
+  }, [user, meQuery.isLoading, error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
