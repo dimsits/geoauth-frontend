@@ -1,5 +1,3 @@
-// src/features/auth/auth.storage.ts
-//
 // Centralized authentication storage utilities.
 // This is the only place in the app that touches localStorage for auth.
 // Keep this file small, synchronous, and side-effect free.
