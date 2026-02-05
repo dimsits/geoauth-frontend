@@ -12,15 +12,7 @@ import { isUnauthorized } from "../../lib/errors";
 
 import { clearToken, getToken } from "../../features/auth/auth.storage";
 import { useMe } from "../../features/auth/hooks/useMe";
-
-/**
- * Minimal user shape.
- * Extend later if backend adds more fields.
- */
-export type AuthUser = {
-  id: string;
-  email: string;
-};
+import type { AuthUser } from "../../features/auth/auth.types";
 
 /**
  * Context value contract.

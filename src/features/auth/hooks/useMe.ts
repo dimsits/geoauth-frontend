@@ -4,12 +4,7 @@ import type { AppError } from "../../../lib/errors";
 import { me } from "../../../api/auth.api";
 import { getToken } from "../auth.storage";
 import { authKeys } from "../auth.keys";
-
-/**
- * Canonical query key for the current authenticated user.
- * Must match the key used by useLogin.
- */
-export const AUTH_ME_QUERY_KEY = ["auth", "me"] as const;
+import type { AuthUser } from "../auth.types";
 
 /**
  * Fetch the currently authenticated user.
@@ -21,16 +16,10 @@ export const AUTH_ME_QUERY_KEY = ["auth", "me"] as const;
 export function useMe() {
   const hasToken = Boolean(getToken());
 
-  return useQuery<
-    Awaited<ReturnType<typeof me>>["user"],
-    AppError
-  >({
+  return useQuery<AuthUser, AppError>({
     queryKey: authKeys.me(),
-    queryFn: async () => {
-      const res = await me();
-      return res.user;
-    },
+    queryFn: async () => (await me()).user,
     enabled: hasToken,
-    staleTime: 60_000, // 1 minute; adjust if needed
+    staleTime: 60_000,
   });
 }
