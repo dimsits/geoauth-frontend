@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { AxiosError } from "axios";
 
 export type AppError = {
@@ -15,23 +16,41 @@ export type AppError = {
 
 /**
  * Backend error envelope (GeoAuth API convention)
- * { error: string, code?: string, details?: any }
+ * Usually: { error: string, code?: string, details?: any }
+ * Sometimes: { message: string, code?: string, details?: any }
  */
 type ApiErrorEnvelope = {
   error?: unknown;
+  message?: unknown;
   code?: unknown;
   details?: unknown;
 };
 
-/**
- * Type guard for Axios errors.
- */
-function isAxiosError(err: unknown): err is AxiosError {
-  return typeof err === "object" && err !== null && (err as any).isAxiosError === true;
-}
-
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function asEnvelope(data: unknown): ApiErrorEnvelope | undefined {
+  return isObject(data) ? (data as ApiErrorEnvelope) : undefined;
+}
+
+function pickString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value : undefined;
+}
+
+function extractMessageFromEnvelope(env: ApiErrorEnvelope): string | undefined {
+  // Prefer { error } but accept { message } as common alternative
+  return pickString(env.error) ?? pickString(env.message);
+}
+
+function extractCodeFromEnvelope(env: ApiErrorEnvelope): string | undefined {
+  return typeof env.code === "string" ? env.code : undefined;
+}
+
+function isTimeoutAxiosError(err: AxiosError): boolean {
+  // Axios: ECONNABORTED is common for timeouts; also allow ERR_NETWORK-ish codes
+  const code = (err as unknown as { code?: unknown }).code;
+  return code === "ECONNABORTED";
 }
 
 /**
@@ -40,37 +59,19 @@ function isObject(value: unknown): value is Record<string, unknown> {
  */
 export function toAppError(err: unknown): AppError {
   // 1) Axios error (most common in API calls)
-  if (isAxiosError(err)) {
+  if (axios.isAxiosError(err)) {
     const status = err.response?.status;
-
-    // A) Backend responded with JSON body (possibly our envelope)
     const data = err.response?.data;
 
-    if (isObject(data)) {
-      const envelope = data as ApiErrorEnvelope;
+    const env = asEnvelope(data);
+    const msgFromEnv = env ? extractMessageFromEnvelope(env) : undefined;
+    const codeFromEnv = env ? extractCodeFromEnvelope(env) : undefined;
+    const detailsFromEnv = env ? env.details : undefined;
 
-      const message =
-        typeof envelope.error === "string" && envelope.error.trim() !== ""
-          ? envelope.error
-          : err.message || "Request failed.";
-
-      const code = typeof envelope.code === "string" ? envelope.code : undefined;
-
-      return {
-        message,
-        status,
-        code,
-        details: envelope.details,
-        raw: err,
-      };
-    }
-
-    // B) No response data (network/CORS/down)
+    // Network / no response (CORS/down/offline)
     if (!err.response) {
-      // Axios uses err.code like 'ERR_NETWORK', 'ECONNABORTED' etc.
-      const isTimeout = (err as any).code === "ECONNABORTED";
       return {
-        message: isTimeout
+        message: isTimeoutAxiosError(err)
           ? "Request timed out. Please try again."
           : "Network error. Please check your connection and try again.",
         status: undefined,
@@ -80,12 +81,13 @@ export function toAppError(err: unknown): AppError {
       };
     }
 
-    // C) Response exists but data is not our envelope (string, html, etc.)
+    // Response exists
     return {
-      message: err.message || "Request failed.",
+      message: msgFromEnv ?? err.message ?? "Request failed.",
       status,
-      code: undefined,
-      details: data,
+      code: codeFromEnv,
+      // Prefer envelope.details; otherwise keep raw data for debugging
+      details: detailsFromEnv ?? data,
       raw: err,
     };
   }
@@ -93,7 +95,7 @@ export function toAppError(err: unknown): AppError {
   // 2) Normal Error instance
   if (err instanceof Error) {
     return {
-      message: err.message || "Something went wrong.",
+      message: pickString(err.message) ?? "Something went wrong.",
       raw: err,
     };
   }
@@ -101,7 +103,7 @@ export function toAppError(err: unknown): AppError {
   // 3) String thrown or other primitives
   if (typeof err === "string") {
     return {
-      message: err.trim() !== "" ? err : "Something went wrong.",
+      message: pickString(err) ?? "Something went wrong.",
       raw: err,
     };
   }
@@ -136,7 +138,6 @@ export function isValidationError(err: unknown): boolean {
   const e = toAppError(err);
   if (e.status === 400) return true;
 
-  // GeoAuth-specific validation codes (expand only if you actually branch on these)
   const validationCodes = new Set([
     "VALIDATION_ERROR",
     "INVALID_EMAIL",
