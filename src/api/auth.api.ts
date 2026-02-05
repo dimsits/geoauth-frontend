@@ -1,21 +1,5 @@
 import { http } from "./http";
-
-export type LoginRequest = {
-  email: string;
-  password: string;
-};
-
-export type LoginResponse = {
-  token: string;
-};
-
-export type MeResponse = {
-  user: {
-    id: string;
-    email: string;
-    createdAt?: string;
-  };
-};
+import type { LoginRequest, LoginResponse, MeResponse } from "../features/auth/auth.types";
 
 /**
  * POST /api/login
