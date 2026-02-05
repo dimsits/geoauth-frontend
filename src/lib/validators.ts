@@ -2,7 +2,7 @@ import validator from "validator";
 
 /**
  * Checks whether a value is a non-empty string after trimming.
- * Acts as a basic "required field" validator.
+ * Acts as a basic "required field" validator
  */
 export function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
