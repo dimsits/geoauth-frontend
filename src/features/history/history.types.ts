@@ -1,6 +1,3 @@
-// Canonical History domain types (DTOs + app-facing shapes).
-// Keep this file pure: types/interfaces only.
-
 import type { GeoSnapshot } from "../geo/geo.types";
 
 /**
