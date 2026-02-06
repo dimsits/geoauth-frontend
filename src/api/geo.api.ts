@@ -1,33 +1,6 @@
+// src/api/geo.api.ts
 import { http } from "./http";
-
-export type GeoSnapshot = {
-  ip: string;
-
-  network: string | null;
-
-  city: string | null;
-  region: string | null;
-  regionCode: string | null;
-
-  country: string | null;
-  countryCode: string | null;
-
-  continent: string | null;
-  continentCode: string | null;
-
-  latitude: number | null;
-  longitude: number | null;
-
-  timezone: string | null;
-  postalCode: string | null;
-
-  source: "ipinfo";
-  resolvedAt: string; // ISO timestamp
-};
-
-export type GeoResponse = {
-  geo: GeoSnapshot | null;
-};
+import type { GeoResponse } from "../features/geo/geo.types";
 
 /**
  * GET /api/geo/self

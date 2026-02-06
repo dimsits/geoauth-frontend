@@ -550,6 +550,19 @@ Each feature is self-contained with its own types, components, and hooks.
   - Caching by React Query
   - Error handling
 
+- **hooks/useGeoByIp.ts**: IP-based geolocation query
+  - Query geolocation for any IP address
+  - Accepts IP parameter
+  - Used by search functionality
+  - Caching and error handling
+
+- **pages/HomePage.tsx**: Home/dashboard page
+  - Displays user's self geolocation
+  - IP search bar integration
+  - Geo data card and map display
+  - Search history list
+  - Logout button and user info
+
 #### `/features/history/` - Search History Feature
 - **history.types.ts**: TypeScript types
   - `HistoryItem` interface
@@ -703,6 +716,24 @@ Each feature is self-contained with its own types, components, and hooks.
 // - Responsive sizing
 ```
 
+#### HomePage Component
+**Location**: `/src/features/geo/pages/HomePage.tsx`  
+**Props**: None (uses hooks and context)  
+**Responsibility**: Home/dashboard page for authenticated users
+
+```typescript
+// Features:
+// - Displays user's self geolocation
+// - Interactive map with location pin
+// - IP search bar integration
+// - Geo data card display (self or searched)
+// - Search history list
+// - Click history items to redisplay geo
+// - Bulk delete history functionality
+// - User info and logout button
+// - Responsive layout for all screen sizes
+```
+
 #### HistoryList Component
 **Location**: `/src/features/history/components/HistoryList.tsx`  
 **Props**: None (uses hooks)  
@@ -774,6 +805,22 @@ const { data: selfGeo, isLoading } = useSelfGeo();
 // Refetch on request
 ```
 
+#### useGeoByIp Hook
+**Location**: `/src/features/geo/hooks/useGeoByIp.ts`  
+**Returns**: `{ data: GeoData, isLoading, error }`  
+**Purpose**: Query geolocation for a specific IP address
+
+```typescript
+// Usage:
+const { data: geoData, isLoading } = useGeoByIp(ipAddress);
+
+// Queries /api/geo/:ip endpoint
+// Accepts IP parameter
+// Automatic caching by React Query
+// Error handling for invalid IPs
+// Used by IP search functionality
+```
+
 #### useHistory Hook
 **Location**: `/src/features/history/hooks/useHistory.ts`  
 **Returns**: `{ data: HistoryItem[], isLoading, error }`  
@@ -832,6 +879,7 @@ deleteRecords([id1, id2]);
 │   └── Contains login form
 │
 └── /home               (Protected route)
+    ├── Route renders HomePage component
     ├── Requires valid JWT token
     ├── Redirects to /login if not authenticated
     └── Contains:
