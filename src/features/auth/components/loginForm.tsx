@@ -115,7 +115,9 @@ export default function LoginForm({ onSuccess, defaultEmail, className }: LoginF
       </button>
 
       <p className="text-sm text-muted">
-        Use the seeded user credentials from the backend to log in.
+        Use the seeded user credentials from the backend to log in. 
+        test@geoauth.dev
+        password123
       </p>
     </form>
   );

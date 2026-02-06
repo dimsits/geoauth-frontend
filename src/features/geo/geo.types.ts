@@ -8,26 +8,15 @@ export type GeoSource = "ipinfo";
 export type GeoSnapshot = {
   ip: string;
 
-  network: string | null;
-
-  city: string | null;
-  region: string | null;
-  regionCode: string | null;
+  asn: string | null;
+  as_name: string | null;
+  as_domain: string | null;
 
   country: string | null;
-  countryCode: string | null;
+  country_code: string | null;
 
   continent: string | null;
-  continentCode: string | null;
-
-  latitude: number | null;
-  longitude: number | null;
-
-  timezone: string | null;
-  postalCode: string | null;
-
-  source: GeoSource;
-  resolvedAt: string; // ISO timestamp
+  continent_code: string | null;
 };
 
 export type GeoResponse = {
