@@ -1,4 +1,5 @@
 import RequireAuth from "./RequireAuth";
+import AppLayout from "../layouts/AppLayout";
 import HomePage from "../../features/geo/pages/HomePage";
 
 /**
@@ -8,7 +9,9 @@ export const HomeRoute = {
   path: "/",
   element: (
     <RequireAuth>
-      <HomePage />
+        <AppLayout>
+            <HomePage />
+        </AppLayout>
     </RequireAuth>
   ),
 };
