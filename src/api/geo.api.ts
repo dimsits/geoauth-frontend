@@ -1,4 +1,3 @@
-// src/api/geo.api.ts
 import { http } from "./http";
 import type { GeoResponse } from "../features/geo/geo.types";
 
