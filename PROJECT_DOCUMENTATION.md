@@ -5,7 +5,7 @@
 **Type:** React Web Application  
 **Build Tool:** Vite  
 **Deployment:** Vercel  
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 
 ---
 
@@ -103,12 +103,15 @@ geoauth-frontend/
 │   │   ├── index.css               # Root styles
 │   │   ├── main.tsx                # React DOM render entry
 │   │   └── providers/              # Context providers
+│   │       ├── AppProviders.tsx    # Main provider wrapper
 │   │       ├── AuthProvider.tsx    # Authentication context
 │   │       └── QueryProvider.tsx   # React Query provider
 │   │
 │   ├── routes/                      # Page/route components
 │   │   ├── HomeRoute.tsx           # Home/dashboard page
-│   │   └── LoginRoute.tsx          # Login page
+│   │   ├── LoginRoute.tsx          # Login page
+│   │   ├── HistoryRoute.tsx        # Search history page
+│   │   └── RequireAuth.tsx         # Protected route wrapper
 │   │
 │   ├── components/                  # Reusable components
 │   │   ├── layout/
@@ -122,23 +125,28 @@ geoauth-frontend/
 │   │
 │   ├── features/                    # Feature-specific modules
 │   │   ├── auth/                   # Authentication feature
+│   │   │   ├── auth.keys.ts       # React Query keys for auth
 │   │   │   ├── auth.storage.ts    # Token storage utilities
 │   │   │   ├── auth.types.ts      # Auth TypeScript types
 │   │   │   ├── components/
 │   │   │   │   └── loginForm.tsx  # Login form component
 │   │   │   └── hooks/
 │   │   │       ├── useLogin.ts    # Login mutation hook
+│   │   │       ├── useLogout.ts   # Logout mutation hook
 │   │   │       └── useMe.ts       # Current user query hook
 │   │   │
 │   │   ├── geo/                    # Geolocation feature
+│   │   │   ├── geo.keys.ts        # React Query keys for geo
 │   │   │   ├── geo.types.ts       # Geo TypeScript types
 │   │   │   ├── components/
 │   │   │   │   ├── GeoCard.tsx    # Geo data display card
 │   │   │   │   └── GeoMap.tsx     # Leaflet map component
 │   │   │   └── hooks/
+│   │   │       ├── useGeoByIp.ts  # IP-based geolocation query hook
 │   │   │       └── useSelfGeo.ts  # Self geolocation query hook
 │   │   │
 │   │   └── history/               # Search history feature
+│   │       ├── history.keys.ts    # React Query keys for history
 │   │       ├── history.types.ts   # History TypeScript types
 │   │       ├── components/
 │   │       │   ├── HistoryItem.tsx    # Single history item
@@ -146,7 +154,7 @@ geoauth-frontend/
 │   │       │   └── IpSearchBar.tsx    # IP search input
 │   │       └── hooks/
 │   │           ├── useDeleteHistory.ts    # Delete history mutation
-│   │           ├── useHistory.ts          # History query hook
+│   │           ├── useHistoryList.ts      # History query hook
 │   │           └── useSearchIp.ts         # IP search mutation
 │   │
 │   ├── lib/                         # Utility libraries
@@ -425,6 +433,11 @@ The frontend communicates with the backend via HTTP(S) using Axios. Configuratio
   - Provider wrapping (Auth, Query)
   - App-level error boundaries
 
+- **providers/AppProviders.tsx**: Combined provider wrapper
+  - Wraps QueryProvider and AuthProvider
+  - Provides unified provider composition
+  - Simplifies App.tsx structure
+
 - **providers/AuthProvider.tsx**: Authentication context
   - `AuthContext` definition
   - `useAuth()` hook
@@ -441,6 +454,12 @@ The frontend communicates with the backend via HTTP(S) using Axios. Configuratio
 
 **Purpose**: Full page components for each route
 
+- **RequireAuth.tsx**: Route protection component
+  - Wrapper for protecting routes requiring authentication
+  - Checks auth status via `useAuth()` context
+  - Redirects to /login if not authenticated
+  - Shows loading state during auth check
+
 - **LoginRoute.tsx**: /login page
   - Login form integration
   - Redirect logic if already authenticated
@@ -452,6 +471,19 @@ The frontend communicates with the backend via HTTP(S) using Axios. Configuratio
   - Search bar integration
   - History list display
   - Logout button
+
+- **HistoryRoute.tsx**: /history page
+  - Protected route using RequireAuth wrapper
+  - Full search history display
+  - IP search integration
+  - Bulk delete functionality
+  - User navigation and logout
+
+- **RequireAuth.tsx**: Route protection component
+  - Wrapper for protected routes
+  - Checks authentication status
+  - Redirects unauthenticated users to /login
+  - Displays loading state during auth check
 
 ### `/src/components/` - Reusable Components
 
@@ -495,6 +527,10 @@ The frontend communicates with the backend via HTTP(S) using Axios. Configuratio
 Each feature is self-contained with its own types, components, and hooks.
 
 #### `/features/auth/` - Authentication Feature
+- **auth.keys.ts**: React Query keys
+  - Query key factory for auth queries
+  - Enables proper cache invalidation
+
 - **auth.storage.ts**: Token persistence
   - `getToken()` - Retrieve from localStorage
   - `setToken(token)` - Store token
@@ -519,12 +555,22 @@ Each feature is self-contained with its own types, components, and hooks.
   - Handles navigation
   - Error handling
 
+- **hooks/useLogout.ts**: Logout mutation hook
+  - Clears token from storage
+  - Resets auth context
+  - Handles navigation to login
+  - State cleanup
+
 - **hooks/useMe.ts**: Current user query hook
   - Queries `GET /api/me`
   - Validates token validity
   - Enables auto-logout on 401
 
 #### `/features/geo/` - Geolocation Feature
+- **geo.keys.ts**: React Query keys
+  - Query key factory for geo queries
+  - Enables proper cache invalidation
+
 - **geo.types.ts**: TypeScript types
   - `GeoData` interface
   - `Location` interface
@@ -560,10 +606,21 @@ Each feature is self-contained with its own types, components, and hooks.
   - Displays user's self geolocation
   - IP search bar integration
   - Geo data card and map display
-  - Search history list
+  - Search history list preview
   - Logout button and user info
 
+- **pages/HistoryPage.tsx**: Search history/dedicated history page
+  - Full search history display
+  - IP search bar integration
+  - Click items to redisplay geo data
+  - Bulk delete functionality
+  - Logout button
+
 #### `/features/history/` - Search History Feature
+- **history.keys.ts**: React Query keys
+  - Query key factory for history queries
+  - Enables proper cache invalidation
+
 - **history.types.ts**: TypeScript types
   - `HistoryItem` interface
   - `HistoryResponse` interface
@@ -590,7 +647,7 @@ Each feature is self-contained with its own types, components, and hooks.
   - Loading state
   - Toolbar for bulk delete
 
-- **hooks/useHistory.ts**: History query hook
+- **hooks/useHistoryList.ts**: History query hook
   - `GET /api/history` query
   - Caching and refetching
   - Pagination support
@@ -821,14 +878,14 @@ const { data: geoData, isLoading } = useGeoByIp(ipAddress);
 // Used by IP search functionality
 ```
 
-#### useHistory Hook
-**Location**: `/src/features/history/hooks/useHistory.ts`  
+#### useHistoryList Hook
+**Location**: `/src/features/history/hooks/useHistoryList.ts`  
 **Returns**: `{ data: HistoryItem[], isLoading, error }`  
 **Purpose**: Query search history
 
 ```typescript
 // Usage:
-const { data: history, isLoading } = useHistory({ limit: 100 });
+const { data: history, isLoading } = useHistoryList({ limit: 100 });
 
 // Fetches on mount
 // Supports pagination
@@ -878,28 +935,40 @@ deleteRecords([id1, id2]);
 │   ├── Redirects to /home if authenticated
 │   └── Contains login form
 │
-└── /home               (Protected route)
-    ├── Route renders HomePage component
+├── /home               (Protected route)
+│   ├── Route renders HomePage component
+│   ├── Requires valid JWT token
+│   ├── Redirects to /login if not authenticated
+│   └── Contains:
+│       ├── Geo data display (self)
+│       ├── Search bar for IP lookup
+│       ├── Active geo display (self or searched)
+│       ├── Map visualization
+│       ├── Search history list
+│       └── Logout button
+│
+└── /history            (Protected route)
+    ├── Route renders HistoryPage component
     ├── Requires valid JWT token
     ├── Redirects to /login if not authenticated
     └── Contains:
-        ├── Geo data display (self)
-        ├── Search bar for IP lookup
-        ├── Active geo display (self or searched)
-        ├── Map visualization
         ├── Search history list
+        ├── IP search bar for lookup
+        ├── Click history to view geo data
+        ├── Bulk delete functionality
         └── Logout button
 ```
 
 ### Route Guards
 
 **Protected Routes**: Routes that require authentication
-- Implemented in App.tsx with `PrivateRoute` wrapper
-- Checks `useAuth()` context
+- Implemented using `RequireAuth` component wrapper
+- Checks `useAuth()` context for valid token
 - Redirects to `/login` if no valid token
+- Applied to: `/home`, `/history`
 
 **Public Routes**: Routes accessible without authentication
-- `/login` redirects to `/home` if already authenticated
+- `/login` - redirects to `/home` if already authenticated
 
 ### Navigation Flow
 
