@@ -41,13 +41,13 @@ GeoAuth is a full-stack web application designed to provide **IP-based geolocati
 - Display geolocation data for the logged-in user's IP address
 - Enable users to search for geolocation data for arbitrary IP addresses
 - Maintain a searchable history of IP lookups
-- Visualize geolocation data on an interactive map
+- Display network information (ASN, AS Name, AS Domain) for IPs
 
 ### Key Objectives
 - Provide a clean, intuitive user interface
 - Ensure secure authentication and data handling
 - Deliver fast, responsive performance using React Query
-- Support real-time map rendering with Leaflet/OpenStreetMap
+- Display comprehensive IP and network information
 - Maintain comprehensive form validation and error handling
 
 ---
@@ -68,10 +68,6 @@ GeoAuth is a full-stack web application designed to provide **IP-based geolocati
 - **Tailwind CSS 4.1.18** - Utility-first CSS framework
 - **@tailwindcss/vite 4.1.18** - Vite plugin for Tailwind CSS
 - **clsx 2.1.1** - Utility for conditional className strings
-
-### Maps & Geolocation
-- **Leaflet 1.9.4** - Interactive map library
-- **React Leaflet 5.0.0** - React bindings for Leaflet
 
 ### HTTP & Data
 - **Axios 1.13.4** - HTTP client for API requests
@@ -140,7 +136,7 @@ geoauth-frontend/
 │   │   │   ├── geo.types.ts       # Geo TypeScript types
 │   │   │   ├── components/
 │   │   │   │   ├── GeoCard.tsx    # Geo data display card
-│   │   │   │   └── GeoMap.tsx     # Leaflet map component
+│   │   │   │   └── GeoMap.tsx     # Geo status placeholder component
 │   │   │   └── hooks/
 │   │   │       ├── useGeoByIp.ts  # IP-based geolocation query hook
 │   │   │       └── useSelfGeo.ts  # Self geolocation query hook
@@ -196,9 +192,9 @@ geoauth-frontend/
 ### 2. Geolocation Display
 - **Self Geolocation**: Display current logged-in user's IP geolocation
 - **IP Search**: Search geolocation for any IP address
-- **Data Display**: Show IP, city, region, country, organization, timezone
-- **Map Visualization**: Interactive map with pinned location using Leaflet
-- **Fallback Handling**: Graceful degradation when coordinates unavailable
+- **Data Display**: Show IP, ASN, AS Name, AS Domain, country, continent, and country/continent codes
+- **Clean Data**: Uses ipinfo API for reliable geolocation data
+- **Fallback Handling**: Graceful degradation when geo data unavailable
 
 ### 3. Search History
 - **Auto-save**: Searches automatically saved to history
@@ -213,6 +209,7 @@ geoauth-frontend/
 - **IP Format Validation**: Valid IPv4/IPv6 address format
 - **Error Display**: Clear error messages for validation failures
 - **Real-time Feedback**: Instant validation as user types
+- **Example Credentials**: Login form displays test credentials for development
 
 ### 5. Responsive Design
 - **Mobile Responsive**: Works on desktop, tablet, mobile
@@ -331,11 +328,11 @@ The frontend communicates with the backend via HTTP(S) using Axios. Configuratio
 #### Geolocation
 - `GET /api/geo/self` - Get user's geolocation
   - Headers: `Authorization: Bearer <token>`
-  - Response: `{ ip, city, region, country, org, timezone, loc }`
+  - Response: `{ geo: { ip, asn, as_name, as_domain, country, country_code, continent, continent_code } }`
   
 - `GET /api/geo/:ip` - Get geolocation for IP
   - Headers: `Authorization: Bearer <token>`
-  - Response: `{ ip, city, region, country, org, timezone, loc }`
+  - Response: `{ geo: { ip, asn, as_name, as_domain, country, country_code, continent, continent_code } }`
 
 #### History
 - `GET /api/history?limit=100` - Fetch search history
@@ -572,24 +569,23 @@ Each feature is self-contained with its own types, components, and hooks.
   - Enables proper cache invalidation
 
 - **geo.types.ts**: TypeScript types
-  - `GeoData` interface
-  - `Location` interface
+  - `GeoSnapshot` interface with ASN and continental data
+  - `GeoSource` enum
   - `GeoResponse` interface
 
 - **components/GeoCard.tsx**: Geo data display
   - IP address display
-  - City/region/country
-  - Organization
-  - Timezone
-  - Coordinates
-  - Responsive layout
+  - Country and continent
+  - ASN, AS Name, AS Domain
+  - Country Code and Continent Code
+  - Loading and error states
+  - Responsive grid layout
 
-- **components/GeoMap.tsx**: Interactive map
-  - Leaflet map instance
-  - Map center on coordinates
-  - Single marker pin
-  - Popup on marker
-  - Responsive map sizing
+- **components/GeoMap.tsx**: Geo placeholder
+  - Simplified placeholder component
+  - No longer renders interactive map
+  - Displays status message for location data
+  - Loading and error state handling
 
 - **hooks/useSelfGeo.ts**: Self geolocation query
   - Auto-fetch on component mount
@@ -636,9 +632,10 @@ Each feature is self-contained with its own types, components, and hooks.
 - **components/HistoryItem.tsx**: Single history entry
   - IP display
   - Timestamp
-  - City/country subtitle
-  - Click handler for re-display
-  - Delete checkbox (if bulk delete enabled)
+  - Country and continent subtitle
+  - Delete button
+  - Responsive layout
+  - Accessible aria-labels
 
 - **components/HistoryList.tsx**: History list container
   - Maps history items
@@ -745,32 +742,32 @@ Each feature is self-contained with its own types, components, and hooks.
 
 #### GeoCard Component
 **Location**: `/src/features/geo/components/GeoCard.tsx`  
-**Props**: `{ geoData: GeoData | null }`  
+**Props**: `{ geo: GeoSnapshot | null, title?: string, loading?: boolean, errorMessage?: string | null, className?: string }`  
 **Responsibility**: Display geolocation information
 
 ```typescript
 // Displays:
 // - IP Address
-// - City, Region, Country
-// - Organization (ISP)
-// - Timezone
-// - Latitude/Longitude
-// - Button to copy IP
+// - Country and Continent
+// - ASN (Autonomous System Number)
+// - AS Name and AS Domain
+// - Country Code and Continent Code
+// - Loading, error, and empty states
+// - Responsive grid layout
 ```
 
 #### GeoMap Component
 **Location**: `/src/features/geo/components/GeoMap.tsx`  
-**Props**: `{ latitude: number, longitude: number }`  
-**Responsibility**: Interactive map with location pin
+**Props**: `{ geo: GeoSnapshot | null, title?: string, loading?: boolean, errorMessage?: string | null, heightClassName?: string, className?: string }`  
+**Responsibility**: Geolocation status display
 
 ```typescript
 // Features:
-// - Leaflet map rendered
-// - Single marker pin at coordinates
-// - Popup on marker click
-// - Zoom controls
-// - Attribution
-// - Responsive sizing
+// - Displays placeholder message
+// - Loading state handling
+// - Error state display
+// - Empty state for unavailable locations
+// - Responsive sizing with configurable height
 ```
 
 #### HomePage Component
@@ -1354,18 +1351,20 @@ interface User {
 }
 ```
 
-### GeoData Model
+### GeoSnapshot Model
 ```typescript
-interface GeoData {
+interface GeoSnapshot {
   ip: string;                    // IP address (e.g., "8.8.8.8")
-  city: string;                  // City name (e.g., "Mountain View")
-  region: string;                // State/region (e.g., "California")
-  country: string;               // Country name (e.g., "United States")
-  country_code: string;          // ISO 2-letter code (e.g., "US")
-  loc: string;                   // Coordinates (e.g., "37.386,-122.084")
-  org: string;                   // Organization/ISP (e.g., "AS15169 Google LLC")
-  timezone: string;              // Timezone (e.g., "America/Los_Angeles")
-  postal: string;                // Postal code (if available)
+  
+  asn: string | null;            // Autonomous System Number (e.g., "AS15169")
+  as_name: string | null;        // AS Name (e.g., "Google LLC")
+  as_domain: string | null;      // AS Domain (e.g., "google.com")
+  
+  country: string | null;        // Country name (e.g., "United States")
+  country_code: string | null;   // ISO 2-letter code (e.g., "US")
+  
+  continent: string | null;      // Continent name (e.g., "North America")
+  continent_code: string | null; // Continent code (e.g., "NA")
 }
 ```
 
@@ -1375,7 +1374,7 @@ interface SearchHistory {
   id: string;
   userId: string;
   ip: string;
-  geo: GeoData;                  // Snapshot of geo data at search time
+  geo: GeoSnapshot;              // Snapshot of geo data at search time
   createdAt: string;
 }
 ```
@@ -1473,15 +1472,16 @@ Authorization: Bearer <JWT_TOKEN>
 **Response** (200 OK)
 ```json
 {
-  "ip": "203.0.113.42",
-  "city": "Mountain View",
-  "region": "California",
-  "country": "United States",
-  "country_code": "US",
-  "loc": "37.386,-122.084",
-  "org": "AS15169 Google LLC",
-  "timezone": "America/Los_Angeles",
-  "postal": "94043"
+  "geo": {
+    "ip": "203.0.113.42",
+    "asn": "AS12345",
+    "as_name": "ISP Name",
+    "as_domain": "isp.com",
+    "country": "United States",
+    "country_code": "US",
+    "continent": "North America",
+    "continent_code": "NA"
+  }
 }
 ```
 
@@ -1499,15 +1499,16 @@ Authorization: Bearer <JWT_TOKEN>
 **Response** (200 OK)
 ```json
 {
-  "ip": "8.8.8.8",
-  "city": "Mountain View",
-  "region": "California",
-  "country": "United States",
-  "country_code": "US",
-  "loc": "37.386,-122.084",
-  "org": "AS15169 Google LLC",
-  "timezone": "America/Los_Angeles",
-  "postal": "94043"
+  "geo": {
+    "ip": "8.8.8.8",
+    "asn": "AS15169",
+    "as_name": "Google LLC",
+    "as_domain": "google.com",
+    "country": "United States",
+    "country_code": "US",
+    "continent": "North America",
+    "continent_code": "NA"
+  }
 }
 ```
 
@@ -1545,14 +1546,13 @@ Content-Type: application/json
   "ip": "8.8.8.8",
   "geo": {
     "ip": "8.8.8.8",
-    "city": "Mountain View",
-    "region": "California",
+    "asn": "AS15169",
+    "as_name": "Google LLC",
+    "as_domain": "google.com",
     "country": "United States",
     "country_code": "US",
-    "loc": "37.386,-122.084",
-    "org": "AS15169 Google LLC",
-    "timezone": "America/Los_Angeles",
-    "postal": "94043"
+    "continent": "North America",
+    "continent_code": "NA"
   },
   "createdAt": "2024-02-05T15:30:00Z"
 }
@@ -1579,14 +1579,13 @@ Authorization: Bearer <JWT_TOKEN>
     "ip": "8.8.8.8",
     "geo": {
       "ip": "8.8.8.8",
-      "city": "Mountain View",
-      "region": "California",
+      "asn": "AS15169",
+      "as_name": "Google LLC",
+      "as_domain": "google.com",
       "country": "United States",
       "country_code": "US",
-      "loc": "37.386,-122.084",
-      "org": "AS15169 Google LLC",
-      "timezone": "America/Los_Angeles",
-      "postal": "94043"
+      "continent": "North America",
+      "continent_code": "NA"
     },
     "createdAt": "2024-02-05T15:30:00Z"
   },
@@ -1634,7 +1633,7 @@ This GeoAuth frontend application is a modern, feature-rich React web app that p
 
 ✅ Secure user authentication with JWT tokens  
 ✅ IP-based geolocation lookup and display  
-✅ Interactive map visualization with Leaflet  
+✅ Network information (ASN, AS Name, AS Domain) visualization  
 ✅ Search history management with bulk delete  
 ✅ Responsive, accessible UI with Tailwind CSS  
 ✅ Type-safe TypeScript throughout  
@@ -1643,7 +1642,7 @@ This GeoAuth frontend application is a modern, feature-rich React web app that p
 ✅ ESLint code quality checks  
 ✅ Production-ready Vite build setup  
 
-**Key Technologies**: React 19, Vite 7, TypeScript 5.9, Tailwind CSS 4, React Query 5, Leaflet 1.9, Axios, React Router 7
+**Key Technologies**: React 19, Vite 7, TypeScript 5.9, Tailwind CSS 4, React Query 5, Axios, React Router 7
 
 **Deployment**: Vercel (recommended), Netlify, AWS Amplify, or any static host
 

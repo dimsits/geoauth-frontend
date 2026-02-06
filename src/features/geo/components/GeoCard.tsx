@@ -1,4 +1,4 @@
-import type { GeoSnapshot } from "../geo.types";
+﻿import type { GeoSnapshot } from "../geo.types";
 
 type GeoCardProps = {
   geo: GeoSnapshot | null;
@@ -14,20 +14,8 @@ type GeoCardProps = {
 };
 
 function formatLocation(geo: GeoSnapshot): string {
-  const parts = [geo.city, geo.region, geo.country].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "—";
-}
-
-function formatCoords(geo: GeoSnapshot): string {
-  if (geo.latitude == null || geo.longitude == null) return "—";
-  return `${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}`;
-}
-
-function formatResolvedAt(iso: string | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString();
+  const parts = [geo.country, geo.continent].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : "--";
 }
 
 export default function GeoCard({
@@ -54,7 +42,7 @@ export default function GeoCard({
 
       {loading ? (
         <div className="rounded-md border border-border bg-background p-3">
-          <p className="text-sm text-muted">Loading geolocation…</p>
+          <p className="text-sm text-muted">Loading geolocation...</p>
         </div>
       ) : null}
 
@@ -85,31 +73,33 @@ export default function GeoCard({
           </div>
 
           <div className="rounded-md border border-border bg-background p-3">
-            <dt className="text-xs font-medium text-muted">Coordinates</dt>
-            <dd className="mt-1 text-sm">{formatCoords(geo)}</dd>
+            <dt className="text-xs font-medium text-muted">ASN</dt>
+            <dd className="mt-1 text-sm">{geo.asn ?? "--"}</dd>
           </div>
 
           <div className="rounded-md border border-border bg-background p-3">
-            <dt className="text-xs font-medium text-muted">Timezone</dt>
-            <dd className="mt-1 text-sm">{geo.timezone ?? "—"}</dd>
+            <dt className="text-xs font-medium text-muted">AS Name</dt>
+            <dd className="mt-1 text-sm">{geo.as_name ?? "--"}</dd>
           </div>
 
           <div className="rounded-md border border-border bg-background p-3">
-            <dt className="text-xs font-medium text-muted">Network</dt>
-            <dd className="mt-1 text-sm">{geo.network ?? "—"}</dd>
+            <dt className="text-xs font-medium text-muted">AS Domain</dt>
+            <dd className="mt-1 text-sm">{geo.as_domain ?? "--"}</dd>
           </div>
 
           <div className="rounded-md border border-border bg-background p-3">
-            <dt className="text-xs font-medium text-muted">Postal Code</dt>
-            <dd className="mt-1 text-sm">{geo.postalCode ?? "—"}</dd>
+            <dt className="text-xs font-medium text-muted">Country Code</dt>
+            <dd className="mt-1 text-sm">{geo.country_code ?? "--"}</dd>
           </div>
 
-          <div className="rounded-md border border-border bg-background p-3 sm:col-span-2">
-            <dt className="text-xs font-medium text-muted">Resolved</dt>
-            <dd className="mt-1 text-sm">
-              {formatResolvedAt(geo.resolvedAt)}{" "}
-              <span className="text-muted">({geo.source})</span>
-            </dd>
+          <div className="rounded-md border border-border bg-background p-3">
+            <dt className="text-xs font-medium text-muted">Continent</dt>
+            <dd className="mt-1 text-sm">{geo.continent ?? "--"}</dd>
+          </div>
+
+          <div className="rounded-md border border-border bg-background p-3">
+            <dt className="text-xs font-medium text-muted">Continent Code</dt>
+            <dd className="mt-1 text-sm">{geo.continent_code ?? "--"}</dd>
           </div>
         </dl>
       ) : null}

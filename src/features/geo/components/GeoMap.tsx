@@ -1,7 +1,4 @@
-import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-
-import type { GeoSnapshot } from "../geo.types";
+﻿import type { GeoSnapshot } from "../geo.types";
 
 export type GeoMapProps = {
   /**
@@ -53,21 +50,6 @@ export default function GeoMap({
   heightClassName = "h-72",
   className,
 }: GeoMapProps) {
-  // Extract coordinates from snapshot.
-  // These fields can legitimately be null (API allows unresolved geo).
-  const lat = geo?.latitude ?? null;
-  const lng = geo?.longitude ?? null;
-
-  const hasCoords = lat !== null && lng !== null;
-
-  /**
-   * React Leaflet `center` expects a `LatLngExpression`.
-   * The tuple form `[number, number]` is the simplest and most type-safe for our use case.
-   *
-   * If coordinates are missing, `center` stays null and we render an empty state instead.
-   */
-  const center: [number, number] | null = hasCoords ? [lat, lng] : null;
-
   return (
     <section
       className={[
@@ -85,7 +67,7 @@ export default function GeoMap({
       {/* Loading state */}
       {loading ? (
         <div className="rounded-md border border-border bg-background p-3">
-          <p className="text-sm text-muted">Loading map…</p>
+          <p className="text-sm text-muted">Loading map...</p>
         </div>
       ) : null}
 
@@ -97,48 +79,16 @@ export default function GeoMap({
       ) : null}
 
       {/* Empty state (no coords) */}
-      {!loading && !errorMessage && !center ? (
-        <div className="rounded-md border border-border bg-background p-3">
-          <p className="text-sm text-muted">
-            Map is unavailable because coordinates were not provided.
-          </p>
-        </div>
-      ) : null}
-
-      {/* Map */}
-      {!loading && !errorMessage && center ? (
+      {!loading && !errorMessage ? (
         <div
           className={[
-            "overflow-hidden rounded-md border border-border",
+            "flex items-center justify-center rounded-md border border-border bg-background",
             heightClassName,
           ].join(" ")}
         >
-          <MapContainer
-            center={center}
-            zoom={11}
-            scrollWheelZoom={false}
-            className="h-full w-full"
-          >
-            <TileLayer
-              attribution="&copy; OpenStreetMap contributors"
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            {/* Using CircleMarker avoids Leaflet marker icon bundling issues */}
-            <CircleMarker center={center} radius={10}>
-              <Popup>
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">{geo?.ip ?? "IP"}</div>
-                  <div className="text-xs">
-                    {geo?.city ?? "—"}, {geo?.region ?? "—"}, {geo?.country ?? "—"}
-                  </div>
-                  <div className="text-xs">
-                    {center[0].toFixed(6)}, {center[1].toFixed(6)}
-                  </div>
-                </div>
-              </Popup>
-            </CircleMarker>
-          </MapContainer>
+          <div className="text-center text-sm text-muted">
+            Map is unavailable for {geo?.ip ?? "this IP"} because ipinfo does not provide coordinates.
+          </div>
         </div>
       ) : null}
     </section>

@@ -1,4 +1,4 @@
-import type { HistoryRecord } from "../history.types";
+﻿import type { HistoryRecord } from "../history.types";
 
 type HistoryItemProps = {
   item: HistoryRecord;
@@ -13,11 +13,7 @@ type HistoryItemProps = {
 function formatLocation(item: HistoryRecord): string {
   if (!item.geo) return "Location unavailable";
 
-  const parts = [
-    item.geo.city,
-    item.geo.region,
-    item.geo.country,
-  ].filter(Boolean);
+  const parts = [item.geo.country, item.geo.continent].filter(Boolean);
 
   return parts.length > 0 ? parts.join(", ") : "Location unavailable";
 }
@@ -34,12 +30,10 @@ export default function HistoryItem({ item, onDelete }: HistoryItemProps) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="break-all text-sm font-medium">{item.ip}</span>
-          <span className="text-xs text-muted">• {formatLocation(item)}</span>
+          <span className="text-xs text-muted">- {formatLocation(item)}</span>
         </div>
 
-        <div className="mt-1 text-xs text-muted">
-          {formatDate(item.createdAt)}
-        </div>
+        <div className="mt-1 text-xs text-muted">{formatDate(item.createdAt)}</div>
       </div>
 
       {onDelete ? (
