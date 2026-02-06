@@ -1,4 +1,5 @@
 import RequireAuth from "./RequireAuth";
+import AppLayout from "../layouts/AppLayout";
 import HistoryPage from "../../features/history/pages/HistoryPage";
 
 /**
@@ -8,7 +9,9 @@ export const HistoryRoute = {
   path: "/history",
   element: (
     <RequireAuth>
-      <HistoryPage />
+        <AppLayout>
+            <HistoryPage />
+        </AppLayout>
     </RequireAuth>
   ),
 };
